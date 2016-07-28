@@ -18,10 +18,10 @@ module Tasks
         # xml, html, svg
         xml: /^\s*((<!)?-->?.*)?$/,
 
-        # Each line starts with '#' or whitespace
+        # Each line starts with '##' or whitespace
         #
         # ruby, python, shell
-        hash: /^\s*(#.*)?$/,
+        hash: /^\s*(##.*)?$/,
       }
 
       def initialize
