@@ -13,10 +13,10 @@ module Tasks
 
       # Patterns for scanning file header comments
       PATTERNS = {
-        # Each line starts with '<!--', '--', or '-->', or whitespace
+        # Each line starts with '<!-- ##' or whitespace
         #
         # xml, html, svg
-        xml: /^\s*((<!)?-->?.*)?$/,
+        xml: /^\s*(<!--\s+##.*\s+..>)?$/,
 
         # Each line starts with '##' or whitespace
         #
@@ -24,8 +24,11 @@ module Tasks
         hash: /^\s*(##.*)?$/,
       }
 
+      # The list of file extensions which should use the `:xml` pattern by default
+      XML_EXTENSIONS = %w[.xml .html .itermcolors]
+
       def initialize
-        @pattern = PATTERNS[:hash]
+        @source_paths = Pathname.glob(Project.path.join(*%w[lib ** *]))
         @template_path = Project.path.join(*%w[templates header.txt])
 
         yield(self) if block_given?
@@ -78,11 +81,21 @@ module Tasks
           desc 'Prepend the header to source files'
           task :header do
             @source_paths.each do |source_path|
+              pattern = @pattern
+
+              if pattern.nil?
+                pattern = if XML_EXTENSIONS.include?(source_path.extname)
+                  PATTERNS[:xml]
+                else
+                  PATTERNS[:hash]
+                end
+              end
+
               Project.log("Adding header to #{source_path.relative_path_from(Project.path)}") do
                 source_data = source_path.read
-                source_data = strip_header(source_data)
+                source_data = strip_header(source_data, pattern)
 
-                header_data = generate_header
+                header_data = generate_header(source_path)
 
                 source_data = "#{header_data}\n#{source_data}"
 
@@ -98,10 +111,10 @@ module Tasks
       protected
 
       # Strip an existing header by scanning using #pattern
-      def strip_header(source_data)
+      def strip_header(source_data, pattern)
         scanning_header_comments = true
         lines = source_data.lines.each_with_object([]) do |line, memo|
-          next if scanning_header_comments && line =~ @pattern
+          next if scanning_header_comments && line =~ pattern
           scanning_header_comments = false
 
           memo << line
@@ -110,11 +123,20 @@ module Tasks
         lines.join
       end
 
-      def generate_header
+      def generate_header(source_path)
         template_path = Project.path.join(@template_path)
         header_data = template_path.read
+        header_data = header_data % { version: Project.version }
 
-        header_data % { version: Project.version }
+        header_data = if XML_EXTENSIONS.include?(source_path.extname)
+          lines = header_data.lines
+          longest_line_length = lines.collect(&:length).max
+          lines.collect { |line| "<!-- ## #{line.chomp.ljust(longest_line_length)} -->\n" }.join
+        else
+          header_data.lines.collect { |line| "## #{line.chomp}\n" }.join
+        end
+
+        header_data
       end
     end
   end
