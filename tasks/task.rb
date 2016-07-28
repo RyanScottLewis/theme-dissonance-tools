@@ -11,7 +11,7 @@ module Tasks
     end
 
     def initialize
-      @build = Build.new
+      @build = Build::Task.new
       @release = Release.new
 
       yield(self) if block_given?
