@@ -32,7 +32,7 @@ module Tasks
             readme_data = template_data % { version: Project.version }
             readme_path = Project.path.join('README.md')
 
-            Project.job("Generating #{readme_path.relative_path_from(Project.path)}") do
+            Project.log("Generating #{readme_path.relative_path_from(Project.path)}") do
               readme_path.open('w+') { |file| file.puts(readme_data) }
             end
           end

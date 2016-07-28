@@ -25,7 +25,7 @@ module Tasks
       }
 
       def initialize
-        @pattern = :hash
+        @pattern = PATTERNS[:hash]
         @template_path = Project.path.join(*%w[templates header.txt])
 
         yield(self) if block_given?
@@ -60,7 +60,11 @@ module Tasks
       # @param [<#to_s>] value The paths, which can be glob patterns
       # @return [<String>]
       def source_paths=(value)
-        @source_paths = value.to_a.collect { |glob| Pathname.glob(glob.to_s) }.flatten.uniq
+        @source_paths = value.to_a.
+          collect { |glob| Pathname.glob(glob.to_s) }.
+          flatten.
+          uniq.
+          collect(&:expand_path)
       end
 
       attr_reader :template_path
