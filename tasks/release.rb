@@ -17,19 +17,19 @@ module Tasks
     def define
       namespace :release do
         task :commit do
-          log_message 'Comitting to Git' do
+          Project.log('Comitting to Git') do
             sh "git commit -am '#{Project.version}'"
           end
         end
 
         task :tag do
-          log_message "Adding Git tag #{Project.version}" do
+          Project.log("Adding Git tag #{Project.version}") do
             sh "git tag #{Project.version}"
           end
         end
 
         task :push do
-          log_message "Pushing Git tag #{Project.version}" do
+          Project.log("Pushing Git tag #{Project.version}") do
             sh "git push origin #{Project.version}"
           end
         end
